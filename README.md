@@ -1,1 +1,2 @@
 # hgrm_multiome_cluster_processing
+Takes single-cell multiome ATAC-seq and RNA-seq data, along with cell cluster data, and returns per-cell cluster metadata and per-cluster metadata, as well as ATAC fragment files for each subcluster, and expression files for each subcluster.
