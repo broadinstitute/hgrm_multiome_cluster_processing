@@ -24,6 +24,10 @@ def main():
 
     # cluster labels must have cell-barcodes as index, and cluster labels in first column (and likely only column)
     cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
+    # for writing out to big_wigs, need in string format
+    # this matches the file type evie gave, with index = cell names,
+    # and first (and should be only) column corresponding to cluster names, regardless of col name
+    cell_clusters['cluster_string'] = cell_clusters.iloc[:, 0].astype(str)
 
     print("Generate cell qc metrics.")
     # mito and ribo info, and total counts, maybe we want users to do this beforehand
@@ -49,9 +53,7 @@ def main():
     )
 
     # Add cell cluster info to each file (is there a nicer way to do this than 3 lines?)
-    # this matches the file type evie gave, with index = cell names,
-    # and first (and should be only) column corresponding to cluster names, regardless of col name
-    clusters_series = cell_clusters.iloc[:, 0]
+    clusters_series = cell_clusters['cluster_string']
     per_cell_metadata["CellClusterID"] = clusters_series
     rna_counts.obs["CellClusterID"] = clusters_series
     atac_counts.obs["CellClusterID"] = clusters_series
@@ -95,6 +97,9 @@ def main():
     print("Saving metadata tables.")
     per_cell_metadata.to_csv("barcode_level_metadata.tsv", sep="\t", header=True)
     per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
+
+    print("Saving bigwigs.")
+    snap.ex.export_coverage(atac_counts, groupby='CellClusterID', suffix='.bw', output_format='bigwig', prefix='atac_coverage_track_')
 
     print("Done.")
 
