@@ -19,7 +19,7 @@ def main():
 
     print("Reading in scATAC fragments. This may take awhile.")
     atac_counts = snap.pp.import_data(
-        args.fragments.tsv, chrom_sizes=snap.genome.hg38, sorted_by_barcode=False
+        args.fragments_tsv, chrom_sizes=snap.genome.hg38, sorted_by_barcode=False
     )
 
     # cluster labels must have cell-barcodes as index, and cluster labels in first column (and likely only column)
