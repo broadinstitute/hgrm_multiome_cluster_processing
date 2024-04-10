@@ -5,7 +5,7 @@ workflow multiome_cluster_processing {
         File expression_h5
         File atac_fragments_tsv
         File cluster_labels
-        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.3'
+        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.4'
         String git_branch = "main"
     }
 
@@ -43,10 +43,11 @@ task get_cluster_data {
         Int rna_size
     }
 
-    Int disk_size = 3 * (atac_size + rna_size)
+    Int disk_size = 100 + (3 * (atac_size + rna_size))
 
     command {
         set -ex
+        /app/monitor_script.sh &
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         micromamba run -n tools2 python3 /app/cluster_processing/multiome_cluster_metadata_and_matrices.py ${expression_h5} ${atac_fragments_tsv} ${cluster_labels}
     }

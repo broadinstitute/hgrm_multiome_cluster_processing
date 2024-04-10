@@ -11,3 +11,6 @@ RUN apt-get update && \
     apt-get install -y git
 
 WORKDIR /app
+
+COPY monitor_script.sh .
+RUN chmod a+rx /app/monitor_script.sh
