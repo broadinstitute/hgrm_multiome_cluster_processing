@@ -99,6 +99,8 @@ def main():
     per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
 
     print("Saving bigwigs.")
+    # just really make sure this is a string beforehand.
+    atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
     snap.ex.export_coverage(atac_counts, groupby='CellClusterID', suffix='.bw', output_format='bigwig', prefix='atac_coverage_track_')
 
     print("Done.")
