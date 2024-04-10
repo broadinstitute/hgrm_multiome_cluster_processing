@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y git
 
-WORKDIR /app
+COPY monitor_script.sh /tmp
+RUN chmod a+rx /tmp/monitor_script.sh
 
-COPY monitor_script.sh .
-RUN chmod a+rx /app/monitor_script.sh
+WORKDIR /app

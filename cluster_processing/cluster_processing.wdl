@@ -48,7 +48,7 @@ task get_cluster_data {
     command {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
-        /app/monitor_script.sh &
+        /tmp/monitor_script.sh &
         micromamba run -n tools2 python3 /app/cluster_processing/multiome_cluster_metadata_and_matrices.py ${expression_h5} ${atac_fragments_tsv} ${cluster_labels}
     }
 
