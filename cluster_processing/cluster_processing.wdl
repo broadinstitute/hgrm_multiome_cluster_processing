@@ -5,7 +5,7 @@ workflow multiome_cluster_processing {
         File expression_h5
         File atac_fragments_tsv
         File cluster_labels
-        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.4'
+        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.5'
         String git_branch = "main"
     }
 
