@@ -27,17 +27,25 @@ def main():
     # for writing out to big_wigs, need in string format
     # this matches the file type evie gave, with index = cell names,
     # and first (and should be only) column corresponding to cluster names, regardless of col name
-    if (
-        cell_clusters.iloc[:, 0].dtypes == "int"
-        or cell_clusters.iloc[:, 0].dtypes == "float"
-    ):
-        cell_clusters["cluster_string"] = "cluster_" + cell_clusters.iloc[:, 0].astype(
-            str
-        )
+    if (cell_clusters.iloc[:, 0].dtypes == "int" or cell_clusters.iloc[:, 0].dtypes == "float"):
+        cell_clusters["cluster_string"] = "cluster_" + cell_clusters.iloc[:, 0].astype(str)
     else:
         cell_clusters.rename(
             columns={cell_clusters.columns[0]: "cluster_string"}, inplace=True
         )
+
+    # Add cell cluster info to each file
+    clusters_series = cell_clusters["cluster_string"]
+    rna_counts.obs["CellClusterID"] = clusters_series
+    atac_counts.obs["CellClusterID"] = clusters_series
+
+    # drop cells with na for cluster
+    atac_counts = atac_counts[atac_counts.obs.dropna().index, :]
+    rna_counts = rna_counts[rna_counts.obs.dropna().index, :]
+
+    # force cast to string one more time to be sure
+    atac_counts.obs["CellClusterID"] = atac_counts.obs["CellClusterID"].astype("string")
+    rna_counts.obs["CellClusterID"] = rna_counts.obs["CellClusterID"].astype("string")
 
     print("Generate cell qc metrics.")
     # mito and ribo info, and total counts, maybe we want users to do this beforehand
@@ -55,20 +63,20 @@ def main():
         columns=["total_counts_mito", "total_counts_ribo"], inplace=True
     )
 
-    rna_counts.obs.columns = "RNA_" + rna_counts.obs.columns
-    atac_counts.obs.columns = "ATAC_" + atac_counts.obs.columns
+    # copy objects metadata
+    rna_obs = rna_counts.obs.copy()
+    atac_obs = atac_counts.obs.copy()
+    rna_obs.columns = "RNA_" + rna_obs.columns
+    atac_obs.columns = "ATAC_" + atac_obs.columns
     # Info by cell
-    per_cell_metadata = rna_counts.obs.merge(
-        atac_counts.obs, left_index=True, right_index=True, how="outer"
+    per_cell_metadata = rna_obs.merge(
+        atac_obs, left_index=True, right_index=True, how="outer"
     )
+    assert per_cell_metadata.ATAC_CellClusterID == per_cell_metadata.RNA_CellClusterID
+    per_cell_metadata.drop(columns=['ATAC_CellClusterID'], inplace=True)
+    per_cell_metadata.rename(columns={'RNA_CellClusterID':'CellClusterID'}, inplace=True)
 
-    # Add cell cluster info to each file (is there a nicer way to do this than 3 lines?)
-    clusters_series = cell_clusters["cluster_string"]
-    per_cell_metadata["CellClusterID"] = clusters_series
-    rna_counts.obs["CellClusterID"] = clusters_series
-    atac_counts.obs["CellClusterID"] = clusters_series
-
-    # Info by cluster
+    #Info by cluster
     # atac data needs to have n_fragment col in obs, coming in.
     per_cluster_metadata = (
         per_cell_metadata.reset_index()
@@ -81,7 +89,7 @@ def main():
     )
 
     # Get CPM information, normalized within each cluster group
-    for cluster_name in rna_counts.obs.CellClusterID.dropna().unique():
+    for cluster_name in rna_counts.obs.CellClusterID.unique():
         tot = rna_counts[rna_counts.obs.CellClusterID == cluster_name, :].X.A.sum(
             axis=0
         )
@@ -90,7 +98,7 @@ def main():
 
     # Run these loops separately to be safe. some clusters may not be in both.
     print("Saving per-cluster atac files.")
-    for cluster_name in atac_counts.obs.CellClusterID.dropna().unique():
+    for cluster_name in atac_counts.obs.CellClusterID.unique():
         atac_cluster_only = atac_counts[
             atac_counts.obs["CellClusterID"] == cluster_name
         ]
