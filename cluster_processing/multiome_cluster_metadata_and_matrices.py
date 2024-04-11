@@ -72,7 +72,7 @@ def main():
     per_cell_metadata = rna_obs.merge(
         atac_obs, left_index=True, right_index=True, how="outer"
     )
-    assert per_cell_metadata.ATAC_CellClusterID == per_cell_metadata.RNA_CellClusterID
+    assert (per_cell_metadata.ATAC_CellClusterID == per_cell_metadata.RNA_CellClusterID).all()
     per_cell_metadata.drop(columns=['ATAC_CellClusterID'], inplace=True)
     per_cell_metadata.rename(columns={'RNA_CellClusterID':'CellClusterID'}, inplace=True)
 
