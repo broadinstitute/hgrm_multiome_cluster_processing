@@ -61,8 +61,8 @@ task get_cluster_data {
 
     runtime {
         docker: docker_image
-        cpu: 4
-        memory: "32GB"
+        cpu: 8
+        memory: "128GB"
         preemptible: 1
         disks: "local-disk ~{disk_size} HDD"
     }

@@ -27,7 +27,17 @@ def main():
     # for writing out to big_wigs, need in string format
     # this matches the file type evie gave, with index = cell names,
     # and first (and should be only) column corresponding to cluster names, regardless of col name
-    cell_clusters['cluster_string'] = cell_clusters.iloc[:, 0].astype(str)
+    if (
+        cell_clusters.iloc[:, 0].dtypes == "int"
+        or cell_clusters.iloc[:, 0].dtypes == "float"
+    ):
+        cell_clusters["cluster_string"] = "cluster_" + cell_clusters.iloc[:, 0].astype(
+            str
+        )
+    else:
+        cell_clusters.rename(
+            columns={cell_clusters.columns[0]: "cluster_string"}, inplace=True
+        )
 
     print("Generate cell qc metrics.")
     # mito and ribo info, and total counts, maybe we want users to do this beforehand
@@ -53,7 +63,7 @@ def main():
     )
 
     # Add cell cluster info to each file (is there a nicer way to do this than 3 lines?)
-    clusters_series = cell_clusters['cluster_string']
+    clusters_series = cell_clusters["cluster_string"]
     per_cell_metadata["CellClusterID"] = clusters_series
     rna_counts.obs["CellClusterID"] = clusters_series
     atac_counts.obs["CellClusterID"] = clusters_series
@@ -84,13 +94,25 @@ def main():
         atac_cluster_only = atac_counts[
             atac_counts.obs["CellClusterID"] == cluster_name
         ]
-        atac_cluster_only.write(f"atac_cluster_{cluster_name}.h5ad", compression="gzip")
+        atac_cluster_only.write(
+            (
+                f"atac_{cluster_name}.h5ad"
+                if "cluster" in cluster_name
+                else f"atac_cluster_{cluster_name}.h5ad"
+            ),
+            compression="gzip",
+        )
 
     print("Saving per-cluster rna files.")
     for cluster_name in rna_counts.obs.CellClusterID.dropna().unique():
         rna_cluster_only = rna_counts[rna_counts.obs["CellClusterID"] == cluster_name]
         rna_cluster_only.write_h5ad(
-            f"rna_cluster_{cluster_name}.h5ad", compression="gzip"
+            (
+                f"rna_{cluster_name}.h5ad"
+                if "cluster" in cluster_name
+                else f"rna_cluster_{cluster_name}.h5ad"
+            ),
+            compression="gzip",
         )
 
     # save metadata tables
@@ -99,11 +121,17 @@ def main():
     per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
 
     print("Saving bigwigs.")
-    # just really make sure this is a string beforehand.
-    atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
-    snap.ex.export_coverage(atac_counts, groupby='CellClusterID', suffix='.bw', output_format='bigwig', prefix='atac_coverage_track_')
+    snap.ex.export_coverage(
+        atac_counts,
+        groupby="CellClusterID",
+        bin_size=100,
+        suffix=".bw",
+        output_format="bigwig",
+        prefix="atac_coverage_track_",
+    )
 
     print("Done.")
+
 
 if __name__ == "__main__":
     main()
