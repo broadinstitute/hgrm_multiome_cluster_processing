@@ -43,10 +43,6 @@ def main():
     atac_counts = atac_counts[atac_counts.obs.dropna().index, :]
     rna_counts = rna_counts[rna_counts.obs.dropna().index, :]
 
-    # force cast to string one more time to be sure
-    atac_counts.obs["CellClusterID"] = atac_counts.obs["CellClusterID"].astype("string")
-    rna_counts.obs["CellClusterID"] = rna_counts.obs["CellClusterID"].astype("string")
-
     print("Generate cell qc metrics.")
     # mito and ribo info, and total counts, maybe we want users to do this beforehand
     # but we at least need "total_counts" and "n_fragment" columns in rna, atac, respectively
@@ -127,6 +123,9 @@ def main():
     print("Saving metadata tables.")
     per_cell_metadata.to_csv("barcode_level_metadata.tsv", sep="\t", header=True)
     per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
+
+    # force cast atac to python string here only
+    atac_counts.obs["CellClusterID"] = atac_counts.obs["CellClusterID"].astype("string")
 
     print("Saving bigwigs.")
     snap.ex.export_coverage(
