@@ -68,9 +68,8 @@ def main():
     per_cell_metadata = rna_obs.merge(
         atac_obs, left_index=True, right_index=True, how="outer"
     )
-    assert (per_cell_metadata.ATAC_CellClusterID == per_cell_metadata.RNA_CellClusterID).all()
-    per_cell_metadata.drop(columns=['ATAC_CellClusterID'], inplace=True)
-    per_cell_metadata.rename(columns={'RNA_CellClusterID':'CellClusterID'}, inplace=True)
+    # we use the original assignments, because some may not be present in both objects
+    per_cell_metadata['CellClusterID'] = clusters_series
 
     #Info by cluster
     # atac data needs to have n_fragment col in obs, coming in.
@@ -123,19 +122,6 @@ def main():
     print("Saving metadata tables.")
     per_cell_metadata.to_csv("barcode_level_metadata.tsv", sep="\t", header=True)
     per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
-
-    # force cast atac to python string here only
-    atac_counts.obs["CellClusterID"] = atac_counts.obs["CellClusterID"].astype("string")
-
-    print("Saving bigwigs.")
-    snap.ex.export_coverage(
-        atac_counts,
-        groupby="CellClusterID",
-        bin_size=100,
-        suffix=".bw",
-        output_format="bigwig",
-        prefix="atac_coverage_track_",
-    )
 
     print("Done.")
 

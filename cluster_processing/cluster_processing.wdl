@@ -27,8 +27,6 @@ workflow multiome_cluster_processing {
         Array[File] h5ads = get_cluster_data.h5ads
         File barcode_level_metadata = get_cluster_data.barcode_level_metadata
         File cluster_level_metadata = get_cluster_data.cluster_level_metadata
-        Array[File] bigwigs = get_cluster_data.bigwigs
-
     }
 }
 
@@ -56,7 +54,6 @@ task get_cluster_data {
         Array[File]+ h5ads = glob("*.h5ad")
         File barcode_level_metadata = "barcode_level_metadata.tsv"
         File cluster_level_metadata = "cluster_level_metadata.tsv"
-        Array[File]+ bigwigs = glob("*.bw")
     }
 
     runtime {
