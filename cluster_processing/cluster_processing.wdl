@@ -24,7 +24,8 @@ workflow multiome_cluster_processing {
     }
 
     output {
-        Array[File] h5ads = get_cluster_data.h5ads
+        Array[File] rna_h5ads = get_cluster_data.rna_h5ads
+        Array[File] atc_h5ads = get_cluster_data.atac_h5ads
         File barcode_level_metadata = get_cluster_data.barcode_level_metadata
         File cluster_level_metadata = get_cluster_data.cluster_level_metadata
     }
@@ -51,7 +52,8 @@ task get_cluster_data {
     }
 
     output {
-        Array[File]+ h5ads = glob("*.h5ad")
+        Array[File]+ rna_h5ads = glob("rna_*.h5ad")
+        Array[File]+ atac_h5ads = glob("atac_*.h5ad")
         File barcode_level_metadata = "barcode_level_metadata.tsv"
         File cluster_level_metadata = "cluster_level_metadata.tsv"
     }
