@@ -128,7 +128,7 @@ def main():
 
     print("Saving off cluster fragment files.")
     atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
-    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='tsv.gz', prefix='atac_fragments_clustered_')
+    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='.tsv.gz', prefix='atac_fragments_clustered_')
 
     print("Done.")
 
