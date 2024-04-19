@@ -5,6 +5,7 @@ workflow multiome_cluster_processing {
         File expression_h5
         File atac_fragments_tsv
         File cluster_labels
+        Int? min_num_fragments
         String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.6'
         String git_branch = "main"
     }
@@ -20,7 +21,8 @@ workflow multiome_cluster_processing {
             docker_image = docker_image,
             git_branch = git_branch,
             atac_size = atac_size,
-            rna_size = rna_size
+            rna_size = rna_size,
+            min_num_fragments = min_num_fragments
     }
 
     output {
@@ -28,6 +30,7 @@ workflow multiome_cluster_processing {
         Array[File] atc_h5ads = get_cluster_data.atac_h5ads
         File barcode_level_metadata = get_cluster_data.barcode_level_metadata
         File cluster_level_metadata = get_cluster_data.cluster_level_metadata
+        Array[File] fragment_files = get_cluster_data.fragment_files
     }
 }
 
@@ -40,6 +43,7 @@ task get_cluster_data {
         String git_branch
         Int atac_size
         Int rna_size
+        Int? min_num_fragments
     }
 
     Int disk_size = 100 + (3 * (atac_size + rna_size))
@@ -48,7 +52,8 @@ task get_cluster_data {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
-        micromamba run -n tools2 python3 /app/cluster_processing/multiome_cluster_metadata_and_matrices.py ${expression_h5} ${atac_fragments_tsv} ${cluster_labels}
+        micromamba run -n tools2 python3 /app/cluster_processing/multiome_cluster_metadata_and_matrices.py ${expression_h5} ${atac_fragments_tsv} ${cluster_labels} \
+            ~{"--min_num_fragments=" + min_num_fragments}
     }
 
     output {
@@ -56,6 +61,7 @@ task get_cluster_data {
         Array[File]+ atac_h5ads = glob("atac_*.h5ad")
         File barcode_level_metadata = "barcode_level_metadata.tsv"
         File cluster_level_metadata = "cluster_level_metadata.tsv"
+        Array[File]+ fragment_files = glob("atac_fragments_clustered_*.tsv.gz")
     }
 
     runtime {

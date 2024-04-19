@@ -12,6 +12,8 @@ def main():
     parser.add_argument("expression_h5", type=str)
     parser.add_argument("fragments_tsv", type=str)
     parser.add_argument("cluster_labels", type=str)
+    parser.add_argument("--min_num_fragments", type=int,
+                        help='optional argument for min_fragments for reading in fragments')
     args = parser.parse_args()
 
     print("Reading in scRNA counts.")
@@ -19,7 +21,8 @@ def main():
 
     print("Reading in scATAC fragments. This may take awhile.")
     atac_counts = snap.pp.import_data(
-        args.fragments_tsv, chrom_sizes=snap.genome.hg38, sorted_by_barcode=False
+        args.fragments_tsv, chrom_sizes=snap.genome.hg38, sorted_by_barcode=False,
+        min_num_fragments=200 if args.min_num_fragments is None else args.min_num_fragments
     )
 
     # cluster labels must have cell-barcodes as index, and cluster labels in first column (and likely only column)
@@ -122,6 +125,10 @@ def main():
     print("Saving metadata tables.")
     per_cell_metadata.to_csv("barcode_level_metadata.tsv", sep="\t", header=True)
     per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
+
+    print("Saving off cluster fragment files.")
+    atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
+    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='tsv.gz', prefix='atac_fragments_clustered_')
 
     print("Done.")
 
