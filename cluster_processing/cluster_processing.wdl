@@ -11,10 +11,11 @@ workflow multiome_cluster_processing {
         String git_branch = "main"
     }
 
-    Int atac_size = floor(size(atac_fragments_tsv, "GB"))
-    Int rna_size = floor(size(expression_h5, "GB"))
-
     scatter (files in zip(zip(expression_h5s, atac_fragments_tsvs), input_names)) {
+
+        Int atac_size = floor(size(files.left.right, "GB"))
+        Int rna_size = floor(size(files.left.left, "GB"))
+
         call get_cluster_data {
             input:
                 expression_h5 = files.left.left,
