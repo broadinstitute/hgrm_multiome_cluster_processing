@@ -9,9 +9,10 @@ import argparse
 def main():
     # Read in args
     parser = argparse.ArgumentParser()
-    parser.add_argument("expression_h5", type=str)
-    parser.add_argument("fragments_tsv", type=str)
-    parser.add_argument("cluster_labels", type=str)
+    parser.add_argument("-r", "expression_h5", type=str)
+    parser.add_argument("-a", "fragments_tsv", type=str)
+    parser.add_argument("-c", "cluster_labels", type=str)
+    parser.add_argument("-n", "input_name", type=str)
     parser.add_argument("--min_num_fragments", type=int,
                         help='optional argument for min_fragments for reading in fragments')
     args = parser.parse_args()
@@ -25,6 +26,7 @@ def main():
         min_num_fragments=200 if args.min_num_fragments is None else args.min_num_fragments
     )
 
+    print("Reading in cell cluster assignments.")
     # cluster labels must have cell-barcodes as index, and cluster labels in first column (and likely only column)
     cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
     # for writing out to big_wigs, need in string format
@@ -62,30 +64,6 @@ def main():
         columns=["total_counts_mito", "total_counts_ribo"], inplace=True
     )
 
-    # copy objects metadata
-    rna_obs = rna_counts.obs.copy()
-    atac_obs = atac_counts.obs.copy()
-    rna_obs.columns = "RNA_" + rna_obs.columns
-    atac_obs.columns = "ATAC_" + atac_obs.columns
-    # Info by cell
-    per_cell_metadata = rna_obs.merge(
-        atac_obs, left_index=True, right_index=True, how="outer"
-    )
-    # we use the original assignments, because some may not be present in both objects
-    per_cell_metadata['CellClusterID'] = clusters_series
-
-    #Info by cluster
-    # atac data needs to have n_fragment col in obs, coming in.
-    per_cluster_metadata = (
-        per_cell_metadata.reset_index()
-        .groupby("CellClusterID")
-        .agg(
-            nCells=("index", "count"),
-            MeanRNAUMIsPerCell=("RNA_total_counts", "mean"),
-            MeanATACFragmentsPerCell=("ATAC_n_fragment", "mean"),
-        )
-    )
-
     # Get CPM information, normalized within each cluster group
     for cluster_name in rna_counts.obs.CellClusterID.unique():
         tot = rna_counts[rna_counts.obs.CellClusterID == cluster_name, :].X.A.sum(
@@ -121,10 +99,10 @@ def main():
             compression="gzip",
         )
 
-    # save metadata tables
-    print("Saving metadata tables.")
-    per_cell_metadata.to_csv("barcode_level_metadata.tsv", sep="\t", header=True)
-    per_cluster_metadata.to_csv("cluster_level_metadata.tsv", sep="\t", header=True)
+    print("Writing out unique cluster names.")
+    with open('all_unique_cluster_names.txt', 'w') as f:
+        for cluster_name in cell_clusters.cluster_string.unique():
+            f.write(f"{cluster_name}\n" if "cluster" in cluster_name else f"cluster_{cluster_name}\n")
 
     print("Saving off cluster fragment files.")
     atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)

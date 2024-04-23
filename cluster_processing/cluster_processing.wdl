@@ -2,8 +2,9 @@ version 1.0
 
 workflow multiome_cluster_processing {
     input {
-        File expression_h5
-        File atac_fragments_tsv
+        Array[File]+ expression_h5s
+        Array[File]+ atac_fragments_tsvs
+        Array[File]+ input_names
         File cluster_labels
         Int? min_num_fragments
         String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.6'
@@ -13,16 +14,19 @@ workflow multiome_cluster_processing {
     Int atac_size = floor(size(atac_fragments_tsv, "GB"))
     Int rna_size = floor(size(expression_h5, "GB"))
 
-    call get_cluster_data {
-        input:
-            expression_h5 = expression_h5,
-            atac_fragments_tsv = atac_fragments_tsv,
-            cluster_labels = cluster_labels,
-            docker_image = docker_image,
-            git_branch = git_branch,
-            atac_size = atac_size,
-            rna_size = rna_size,
-            min_num_fragments = min_num_fragments
+    scatter (files in zip(zip(expression_h5s, atac_fragments_tsvs), input_names)) {
+        call get_cluster_data {
+            input:
+                expression_h5 = files.left.left,
+                atac_fragments_tsv = files.left.right,
+                input_name = files.right,
+                cluster_labels = cluster_labels,
+                docker_image = docker_image,
+                git_branch = git_branch,
+                atac_size = atac_size,
+                rna_size = rna_size,
+                min_num_fragments = min_num_fragments
+        }
     }
 
     output {
@@ -39,6 +43,7 @@ task get_cluster_data {
         File expression_h5
         File atac_fragments_tsv
         File cluster_labels
+        String input_name
         String docker_image
         String git_branch
         Int atac_size
@@ -52,8 +57,8 @@ task get_cluster_data {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
-        micromamba run -n tools2 python3 /app/cluster_processing/multiome_cluster_metadata_and_matrices.py ${expression_h5} ${atac_fragments_tsv} ${cluster_labels} \
-            ~{"--min_num_fragments=" + min_num_fragments}
+        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_h5ads.py -r ${expression_h5} -a ${atac_fragments_tsv} -c ${cluster_labels} \
+            -n ${input_name} ~{"--min_num_fragments=" + min_num_fragments}
     }
 
     output {
