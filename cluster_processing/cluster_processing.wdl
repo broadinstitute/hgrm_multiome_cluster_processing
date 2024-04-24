@@ -1,4 +1,4 @@
-version 1.0
+version development
 
 workflow multiome_cluster_processing {
     input {
@@ -30,12 +30,31 @@ workflow multiome_cluster_processing {
         }
     }
 
+    Map[String, Array[File]] rna_files = collect_by_key(flatten(get_cluster_data.rna_files))
+    Map[String, Array[File]] atac_files = collect_by_key(flatten(get_cluster_data.rna_files))
+    Array[String] cluster_names = keys(rna_files)
+
+    scatter (cluster_name in cluster_names) {
+        call concatenate_cluster {
+            input:
+                cluster_name = cluster_name,
+                rna_files = rna_files[cluster_name],
+                atac_files = atac_files[cluster_name],
+                docker_image = docker_image
+        }
+    }
+
+    call extract_metadata_tables {
+        input:
+            cluster_cell_metadatas = concatenate_cluster.cluster_cell_metadata,
+            docker_image = docker_image
+    }
+
     output {
-        Array[File] rna_h5ads = get_cluster_data.rna_h5ads
-        Array[File] atc_h5ads = get_cluster_data.atac_h5ads
-        File barcode_level_metadata = get_cluster_data.barcode_level_metadata
-        File cluster_level_metadata = get_cluster_data.cluster_level_metadata
-        Array[File] fragment_files = get_cluster_data.fragment_files
+        Array[File] rna_h5ads = concatenate_cluster.concatenated_rna_h5ad
+        Array[File] atac_h5ads = concatenate_cluster.concatenated_atac_h5ad
+        File barcode_level_metadata = extract_metadata_tables.barcode_level_metadata
+        File cluster_level_metadata = extract_metadata_tables.cluster_level_metadata
     }
 }
 
@@ -63,11 +82,8 @@ task get_cluster_data {
     }
 
     output {
-        Array[File]+ rna_h5ads = glob("rna_*.h5ad")
-        Array[File]+ atac_h5ads = glob("atac_*.h5ad")
-        File barcode_level_metadata = "barcode_level_metadata.tsv"
-        File cluster_level_metadata = "cluster_level_metadata.tsv"
-        Array[File]+ fragment_files = glob("atac_fragments_clustered_*.tsv.gz")
+        Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_file.txt"))
+        Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_file.txt"))
     }
 
     runtime {
@@ -76,5 +92,52 @@ task get_cluster_data {
         memory: "128GB"
         preemptible: 1
         disks: "local-disk ~{disk_size} HDD"
+    }
+}
+
+task concatenate_cluster {
+    input {
+        String cluster_name
+        Array[File]+ rna_files
+        Array[File]+ atac_files
+        String docker_image
+    }
+
+    Int atac_size = floor(size(atac_files, "GB"))
+    Int rna_size = floor(size(rna_files, "GB"))
+    Int disk_size = 100 + (3 * (atac_size + rna_size))
+
+    command {
+        echo "writing concatenated file and metadata"
+    }
+
+    output {
+        File concatenated_rna_h5ad = "rna_~{cluster_name}.h5ad"
+        File concatenated_atac_h5ad = "atac_~{cluster_name}.h5ad"
+        File cluster_cell_metadata = "~{cluster_name}_cell_metadata.tsv"
+    }
+
+    runtime {
+        docker: docker_image
+        cpu: 8
+        memory: "128GB"
+        preemptible: 1
+        disks: "local-disk ~{disk_size} HDD"
+    }
+}
+
+task extract_metadata_tables {
+    input {
+        Array[File] cluster_cell_metadatas
+        String docker_image
+    }
+
+    command {
+        echo "joining all cell metadata across clusters, and getting cluster level data"
+    }
+
+    output {
+        File barcode_level_metadata = "barcode_level_metadata.tsv"
+        File cluster_level_metadata = "cluster_level_metadata.tsv"
     }
 }
