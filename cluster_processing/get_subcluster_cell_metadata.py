@@ -7,8 +7,8 @@ import snapatac2 as snap
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "subcluster_name", type=str)
-    parser.add_argument("-c", "cluster_labels", type=str)
+    parser.add_argument("-s", "subcluster_name", type=str, required=True)
+    parser.add_argument("-c", "cluster_labels", type=str, required=True)
     parser.add_argument("-r", "--rna_h5ad", dest="clustered_rna_h5ads", nargs='+', default=[],
                         help="RNA h5ads for this cluster across all inputs")
     parser.add_argument("-a", "--atac_h5ad", dest="clustered_atc_h5ads", nargs='+', default=[],

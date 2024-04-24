@@ -81,8 +81,8 @@ task get_cluster_data {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
-        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_h5ads.py -r ${expression_h5} -a ${atac_fragments_tsv} -c ${cluster_labels} \
-            -n ${input_name} ~{"--min_num_fragments=" + min_num_fragments}
+        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_h5ads.py -e ${expression_h5} -f ${atac_fragments_tsv} -c ${cluster_labels} \
+            -i ${input_name} ~{"--min_num_fragments=" + min_num_fragments}
     }
 
     output {
@@ -119,7 +119,7 @@ task concatenate_cluster {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
-        micromamba run -n tools2 python3 /app/cluster_processing/get_subcluster_cell_metadata.py -n ${cluster_name} -c ${cluster_labels} \
+        micromamba run -n tools2 python3 /app/cluster_processing/get_subcluster_cell_metadata.py -s ${cluster_name} -c ${cluster_labels} \
             -r ${sep=' ' rna_files} \
             -a ${sep=' ' atac_files}
     }
