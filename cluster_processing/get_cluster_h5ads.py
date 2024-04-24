@@ -9,10 +9,10 @@ import argparse
 def main():
     # Read in args
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "expression_h5", type=str, required=True)
-    parser.add_argument("-f", "fragments_tsv", type=str, required=True)
-    parser.add_argument("-c", "cluster_labels", type=str, required=True)
-    parser.add_argument("-i", "input_name", type=str, required=True)
+    parser.add_argument("-e", dest="expression_h5", type=str, required=True)
+    parser.add_argument("-f", dest="fragments_tsv", type=str, required=True)
+    parser.add_argument("-c", dest="cluster_labels", type=str, required=True)
+    parser.add_argument("-i", dest="input_name", type=str, required=True)
     parser.add_argument("--min_num_fragments", type=int,
                         help='optional argument for min_fragments for reading in fragments')
     args = parser.parse_args()
