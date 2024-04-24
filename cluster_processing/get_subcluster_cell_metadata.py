@@ -20,11 +20,16 @@ def main():
     if args.clustered_rna_h5ad is not None:
         all_rna_counts = [sc.read_h5ad(rna) for rna in args.clustered_rna_h5ads]
         rna_counts = ad.concat(all_rna_counts)
+        print(f"Writing out concatenated rna h5ad for cluster {cluster_name} across inputs.")
+        rna_counts.write_h5ad(f'rna_{cluster_name}.h5ad')
 
     print(f"Reading in all {cluster_name} ATAC files.")
     if args.clustered_atac_h5ad is not None:
         all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_rna_h5ads]
         atac_counts = ad.concat(all_atac_counts)
+        print(f"Writing out concatenated atac h5ad for cluster {cluster_name} across inputs.")
+        atac_counts.write_h5ad(f'atac_{cluster_name}.h5ad')
+
 
     # read in cell cluster info and get in same format as cluster names
     cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
@@ -35,6 +40,7 @@ def main():
             columns={cell_clusters.columns[0]: "cluster_string"}, inplace=True
         )
 
+    #TODO: deal with this, write out empty files perhaps
     # account for rare cases where an entire cluster exists only in one of the data types (RNA or ATAC)
     if args.clustered_rna_h5ad is None:
         # make an RNA object with same dimension, filled with NaN for consistency later
@@ -61,11 +67,6 @@ def main():
     per_cell_metadata['CellClusterID'] = cell_clusters.cluster_string
 
     per_cell_metadata.to_csv(f'{cluster_name}_per_cell_metadata.txt', sep='\t')
-
-    # TODO: figure out fragment files
-    print("Saving off cluster fragment files.")
-    atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
-    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='.tsv.gz', prefix='atac_fragments_clustered_')
 
 
 

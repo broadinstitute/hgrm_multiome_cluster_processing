@@ -17,6 +17,7 @@ def main():
                         help='optional argument for min_fragments for reading in fragments')
     args = parser.parse_args()
 
+    input_name = args.input_name
     print("Reading in scRNA counts.")
     rna_counts = sc.read_10x_h5(args.expression_h5)
 
@@ -74,35 +75,35 @@ def main():
 
     # Run these loops separately to be safe. some clusters may not be in both.
     print("Saving per-cluster atac files.")
-    for cluster_name in atac_counts.obs.CellClusterID.unique():
-        atac_cluster_only = atac_counts[
-            atac_counts.obs["CellClusterID"] == cluster_name
-        ]
-        atac_cluster_only.write(
-            (
-                f"atac_{cluster_name}.h5ad"
-                if "cluster" in cluster_name
-                else f"atac_cluster_{cluster_name}.h5ad"
-            ),
-            compression="gzip",
-        )
+    with open('atac_cluster_pairs.tsv', 'w') as f:
+        for cluster_name in atac_counts.obs.CellClusterID.unique():
+            atac_cluster_only = atac_counts[
+                atac_counts.obs["CellClusterID"] == cluster_name
+            ]
+            fname = f"{input_name}_atac_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}_atac_cluster_{cluster_name}.h5ad"
+            atac_cluster_only.write(fname,
+                compression="gzip",
+            )
+            cluster_str = cluster_name if "cluster" in cluster_name else f"cluster_{cluster_name}"
+            f.write(f"{cluster_str}\t{fname}\n")
+
 
     print("Saving per-cluster rna files.")
-    for cluster_name in rna_counts.obs.CellClusterID.dropna().unique():
-        rna_cluster_only = rna_counts[rna_counts.obs["CellClusterID"] == cluster_name]
-        rna_cluster_only.write_h5ad(
-            (
-                f"rna_{cluster_name}.h5ad"
-                if "cluster" in cluster_name
-                else f"rna_cluster_{cluster_name}.h5ad"
-            ),
-            compression="gzip",
-        )
+    with open('rna_cluster_pairs.tsv', 'w') as f:
+        for cluster_name in rna_counts.obs.CellClusterID.dropna().unique():
+            rna_cluster_only = rna_counts[
+                rna_counts.obs["CellClusterID"] == cluster_name
+            ]
+            fname = f"{input_name}_rna_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}_rna_cluster_{cluster_name}.h5ad"
+            rna_cluster_only.write_h5ad(fname,
+                compression="gzip",
+            )
+            cluster_str = cluster_name if "cluster" in cluster_name else f"cluster_{cluster_name}"
+            f.write(f"{cluster_str}\t{fname}\n")
 
-    print("Writing out unique cluster names.")
-    with open('all_unique_cluster_names.txt', 'w') as f:
-        for cluster_name in cell_clusters.cluster_string.unique():
-            f.write(f"{cluster_name}\n" if "cluster" in cluster_name else f"cluster_{cluster_name}\n")
+    print("Saving off cluster fragment files.")
+    atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
+    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='.tsv.gz', prefix=f'{input_name}_atac_fragments_clustered_')
 
     print("Done.")
 

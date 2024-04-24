@@ -4,7 +4,7 @@ workflow multiome_cluster_processing {
     input {
         Array[File]+ expression_h5s
         Array[File]+ atac_fragments_tsvs
-        Array[File]+ input_names
+        Array[String]+ input_names
         File cluster_labels
         Int? min_num_fragments
         String docker_image = 'us.gcr.io/landerlab-atacseq-200218/hgrm_multiome_cluster_processing:0.6'
@@ -40,6 +40,8 @@ workflow multiome_cluster_processing {
                 cluster_name = cluster_name,
                 rna_files = rna_files[cluster_name],
                 atac_files = atac_files[cluster_name],
+                cluster_labels = cluster_labels,
+                git_branch = git_branch,
                 docker_image = docker_image
         }
     }
@@ -47,6 +49,7 @@ workflow multiome_cluster_processing {
     call extract_metadata_tables {
         input:
             cluster_cell_metadatas = concatenate_cluster.cluster_cell_metadata,
+            git_branch = git_branch,
             docker_image = docker_image
     }
 
@@ -55,6 +58,7 @@ workflow multiome_cluster_processing {
         Array[File] atac_h5ads = concatenate_cluster.concatenated_atac_h5ad
         File barcode_level_metadata = extract_metadata_tables.barcode_level_metadata
         File cluster_level_metadata = extract_metadata_tables.cluster_level_metadata
+        Array[File] all_fragment_files = flatten(get_cluster_data.fragment_files)
     }
 }
 
@@ -82,8 +86,9 @@ task get_cluster_data {
     }
 
     output {
-        Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_file.txt"))
-        Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_file.txt"))
+        Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_cluster_pairs.tsv"))
+        Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_cluster_pairs.tsv"))
+        Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
     }
 
     runtime {
@@ -100,6 +105,8 @@ task concatenate_cluster {
         String cluster_name
         Array[File]+ rna_files
         Array[File]+ atac_files
+        String cluster_labels
+        String git_branch
         String docker_image
     }
 
@@ -109,12 +116,18 @@ task concatenate_cluster {
 
     command {
         echo "writing concatenated file and metadata"
+        set -ex
+        (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
+        /tmp/monitor_script.sh &
+        micromamba run -n tools2 python3 /app/cluster_processing/get_subcluster_cell_metadata.py -n ${cluster_name} -c ${cluster_labels} \
+            -r ${sep=' ' rna_files} \
+            -a ${sep=' ' atac_files}
     }
 
     output {
         File concatenated_rna_h5ad = "rna_~{cluster_name}.h5ad"
         File concatenated_atac_h5ad = "atac_~{cluster_name}.h5ad"
-        File cluster_cell_metadata = "~{cluster_name}_cell_metadata.tsv"
+        File cluster_cell_metadata = "~{cluster_name}_per_cell_metadata.txt"
     }
 
     runtime {
@@ -129,15 +142,27 @@ task concatenate_cluster {
 task extract_metadata_tables {
     input {
         Array[File] cluster_cell_metadatas
+        String git_branch
         String docker_image
     }
 
     command {
         echo "joining all cell metadata across clusters, and getting cluster level data"
+        set -ex
+        (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
+        /tmp/monitor_script.sh &
+        micromamba run -n tools2 python3 /app/cluster_processing/join_cluster_metadata.py -c ${sep=' ' cluster_cell_metadatas}
     }
 
     output {
         File barcode_level_metadata = "barcode_level_metadata.tsv"
         File cluster_level_metadata = "cluster_level_metadata.tsv"
+    }
+
+    runtime {
+        docker: docker_image
+        cpu: 1
+        memory: "16GB"
+        preemptible: 1
     }
 }
