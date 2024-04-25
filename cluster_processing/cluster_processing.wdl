@@ -13,8 +13,8 @@ workflow multiome_cluster_processing {
 
     scatter (files in zip(zip(expression_h5s, atac_fragments_tsvs), input_names)) {
 
-        Int atac_size = floor(size(files.left.right, "GB"))
-        Int rna_size = floor(size(files.left.left, "GB"))
+        Int atac_size_1 = floor(size(files.left.right, "GB"))
+        Int rna_size_1 = floor(size(files.left.left, "GB"))
 
         call get_cluster_data {
             input:
@@ -24,8 +24,8 @@ workflow multiome_cluster_processing {
                 cluster_labels = cluster_labels,
                 docker_image = docker_image,
                 git_branch = git_branch,
-                atac_size = atac_size,
-                rna_size = rna_size,
+                atac_size = atac_size_1,
+                rna_size = rna_size_1,
                 min_num_fragments = min_num_fragments
         }
     }
@@ -34,13 +34,25 @@ workflow multiome_cluster_processing {
     Map[String, Array[File]] atac_files = collect_by_key(flatten(get_cluster_data.rna_files))
     Array[String] cluster_names = keys(rna_files)
 
+    call save_map {
+        input:
+            rna_files = rna_files,
+            atac_files = atac_files
+    }
+
     scatter (cluster_name in cluster_names) {
+
+        Int atac_size_2 = floor(size(atac_files[cluster_name], "GB"))
+        Int rna_size_2 = floor(size(rna_files[cluster_name], "GB"))
+
         call concatenate_cluster {
             input:
                 cluster_name = cluster_name,
                 rna_files = rna_files[cluster_name],
                 atac_files = atac_files[cluster_name],
                 cluster_labels = cluster_labels,
+                atac_size = atac_size_2,
+                rna_size = rna_size_2,
                 git_branch = git_branch,
                 docker_image = docker_image
         }
@@ -59,6 +71,8 @@ workflow multiome_cluster_processing {
         File barcode_level_metadata = extract_metadata_tables.barcode_level_metadata
         File cluster_level_metadata = extract_metadata_tables.cluster_level_metadata
         Array[File] all_fragment_files = flatten(get_cluster_data.fragment_files)
+        File atac_map_file = save_map.atac_map_file_out
+        File rna_map_file = save_map.rna_map_file_out
     }
 }
 
@@ -102,18 +116,33 @@ task get_cluster_data {
     }
 }
 
+task save_map {
+    input {
+        Map[String, Array[String]] rna_files
+        Map[String, Array[String]] atac_files
+    }
+
+    command <<<
+    >>>
+
+    output {
+        File rna_map_file_out = write_map(rna_files)
+        File atac_map_file_out = write_map(atac_files)
+    }
+}
+
 task concatenate_cluster {
     input {
         String cluster_name
         Array[File]+ rna_files
         Array[File]+ atac_files
         String cluster_labels
+        Int atac_size
+        Int rna_size
         String git_branch
         String docker_image
     }
 
-    Int atac_size = floor(size(atac_files, "GB"))
-    Int rna_size = floor(size(rna_files, "GB"))
     Int disk_size = 100 + (3 * (atac_size + rna_size))
 
     command {
