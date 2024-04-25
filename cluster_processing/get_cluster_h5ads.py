@@ -18,6 +18,9 @@ def main():
     args = parser.parse_args()
 
     input_name = args.input_name
+    if input_name != '':
+        input_name = input_name + '_'
+
     print("Reading in scRNA counts.")
     rna_counts = sc.read_10x_h5(args.expression_h5)
 
@@ -80,7 +83,7 @@ def main():
             atac_cluster_only = atac_counts[
                 atac_counts.obs["CellClusterID"] == cluster_name
             ]
-            fname = f"{input_name}_atac_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}_atac_cluster_{cluster_name}.h5ad"
+            fname = f"{input_name}atac_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}atac_cluster_{cluster_name}.h5ad"
             atac_cluster_only.write(fname,
                 compression="gzip",
             )
@@ -94,7 +97,7 @@ def main():
             rna_cluster_only = rna_counts[
                 rna_counts.obs["CellClusterID"] == cluster_name
             ]
-            fname = f"{input_name}_rna_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}_rna_cluster_{cluster_name}.h5ad"
+            fname = f"{input_name}rna_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}rna_cluster_{cluster_name}.h5ad"
             rna_cluster_only.write_h5ad(fname,
                 compression="gzip",
             )
@@ -103,7 +106,7 @@ def main():
 
     print("Saving off cluster fragment files.")
     atac_counts.obs['CellClusterID'] = atac_counts.obs['CellClusterID'].astype(str)
-    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='.tsv.gz', prefix=f'{input_name}_atac_fragments_clustered_')
+    snap.ex.export_fragments(atac_counts, groupby='CellClusterID', suffix='.tsv.gz', prefix=f'{input_name}atac_fragments_clustered_')
 
     print("Done.")
 

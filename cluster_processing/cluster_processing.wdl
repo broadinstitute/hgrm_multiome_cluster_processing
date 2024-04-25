@@ -89,6 +89,8 @@ task get_cluster_data {
         Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_cluster_pairs.tsv"))
         Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_cluster_pairs.tsv"))
         Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
+        Array[File]+ rna_h5ads = glob("*rna_*.h5ad")
+        Array[File]+ atac_h5ads = glob("*atac_*.h5ad")
     }
 
     runtime {
