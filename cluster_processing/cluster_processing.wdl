@@ -37,7 +37,8 @@ workflow multiome_cluster_processing {
     call save_map {
         input:
             rna_files = rna_files,
-            atac_files = atac_files
+            atac_files = atac_files,
+            docker_image = docker_image
     }
 
     scatter (cluster_name in cluster_names) {
@@ -120,6 +121,7 @@ task save_map {
     input {
         Map[String, Array[String]] rna_files
         Map[String, Array[String]] atac_files
+        String docker_image
     }
 
     command <<<
@@ -128,6 +130,10 @@ task save_map {
     output {
         File rna_map_file_out = write_map(rna_files)
         File atac_map_file_out = write_map(atac_files)
+    }
+
+    runtime {
+        docker: docker_image
     }
 }
 
