@@ -32,16 +32,20 @@ workflow multiome_cluster_processing {
         }
     }
 
-    Map[String, Array[File]] rna_files = collect_by_key(flatten(get_cluster_data.rna_files))
-    Map[String, Array[File]] atac_files = collect_by_key(flatten(get_cluster_data.rna_files))
-    Array[String] cluster_names = keys(rna_files)
+    Array[String] all_rna_files = flatten(get_cluster_data.rna_h5ads)
+    Array[String] all_atac_files = flatten(get_cluster_data.atac_h5ads)
 
-    call save_map {
+    call get_cluster_file_map {
         input:
-            rna_files = rna_files,
-            atac_files = atac_files,
+            all_rna_files = all_rna_files,
+            all_atac_files = all_atac_files,
+            git_branch = git_branch,
             docker_image = docker_image
     }
+
+    Map[String, Array[File]] rna_files = collect_by_key(get_cluster_file_map.rna_files)
+    Map[String, Array[File]] atac_files = collect_by_key(get_cluster_file_map.atac_files)
+    Array[String] cluster_names = keys(rna_files)
 
     scatter (cluster_name in cluster_names) {
 
@@ -74,8 +78,6 @@ workflow multiome_cluster_processing {
         File barcode_level_metadata = extract_metadata_tables.barcode_level_metadata
         File cluster_level_metadata = extract_metadata_tables.cluster_level_metadata
         Array[File] all_fragment_files = flatten(get_cluster_data.fragment_files)
-        File atac_map_file = save_map.atac_map_file_out
-        File rna_map_file = save_map.rna_map_file_out
     }
 }
 
@@ -113,11 +115,9 @@ task get_cluster_data {
     }
 
     output {
-        Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_cluster_pairs.tsv"))
-        Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_cluster_pairs.tsv"))
         Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
-        Array[File]+ rna_h5ads = glob("*rna_*fake_file.txt")
-        Array[File]+ atac_h5ads = glob("*atac_*fake_file.txt")
+        Array[File]+ rna_h5ads = glob("output/*/rna_fake_file.txt")
+        Array[File]+ atac_h5ads = glob("output/*/atac_fake_file.txt")
     }
 
     runtime {
@@ -126,6 +126,32 @@ task get_cluster_data {
         memory: "128GB"
         preemptible: 1
         disks: "local-disk ~{disk_size} HDD"
+    }
+}
+
+task get_cluster_file_map {
+    input {
+        Array[String] all_rna_files
+        Array[String] all_atac_files
+        String git_branch
+        String docker_image
+    }
+
+    command {
+        set -ex
+        (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
+        /tmp/monitor_script.sh &
+        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_file_map.py -r ${sep=' ' all_rna_files} \
+            -a ${sep=' ' all_atac_files}
+    }
+
+    output {
+        Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_cluster_pairs.tsv"))
+        Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_cluster_pairs.tsv"))
+    }
+
+    runtime {
+        docker: docker_image
     }
 }
 

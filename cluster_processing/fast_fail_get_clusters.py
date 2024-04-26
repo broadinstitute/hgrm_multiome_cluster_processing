@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 from pathlib import Path
+import os
 
 def main():
     parser = argparse.ArgumentParser()
@@ -9,8 +10,12 @@ def main():
 
     cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
     cell_clusters_unique = pd.DataFrame(cell_clusters.iloc[:, 0].unique().astype(str), columns=['cluster'])
-    cell_clusters_unique['rna_fake_file'] = 'rna_' + cell_clusters_unique['cluster'] + '_fake_file.txt'
-    cell_clusters_unique['atac_fake_file'] = 'atac_' + cell_clusters_unique['cluster'] + '_fake_file.txt'
+
+    for cluster in cell_clusters_unique.cluster:
+        os.makedirs(f'output/{cluster}', exist_ok=True)
+
+    cell_clusters_unique['rna_fake_file'] = f'output/{cluster}/' + 'rna_fake_file.txt'
+    cell_clusters_unique['atac_fake_file'] = f'output/{cluster}/' + 'atac_fake_file.txt'
 
     for file in cell_clusters_unique.rna_fake_file:
         Path(f'{file}').touch()
