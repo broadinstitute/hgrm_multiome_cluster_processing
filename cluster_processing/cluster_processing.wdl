@@ -13,8 +13,10 @@ workflow multiome_cluster_processing {
 
     scatter (files in zip(zip(expression_h5s, atac_fragments_tsvs), input_names)) {
 
-        Int atac_size_1 = floor(size(files.left.right, "GB"))
-        Int rna_size_1 = floor(size(files.left.left, "GB"))
+        #Int atac_size_1 = floor(size(files.left.right, "GB"))
+        #Int rna_size_1 = floor(size(files.left.left, "GB"))
+        Int atac_size_1 = "2GB"
+        Int rna_size_1 = "2GB"
 
         call get_cluster_data {
             input:
@@ -92,20 +94,30 @@ task get_cluster_data {
 
     Int disk_size = 100 + (3 * (atac_size + rna_size))
 
+    parameter_meta {
+        expression_h5: {
+            localization_optional: true
+        }
+        atac_fragments_tsv: {
+            localization_optional: true
+        }
+    }
+
     command {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
-        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_h5ads.py -e ${expression_h5} -f ${atac_fragments_tsv} -c ${cluster_labels} \
-            -i ${input_name} ~{"--min_num_fragments=" + min_num_fragments}
+        micromamba run -n tools2 python3 /app/cluster_processing/fast_fail_get_clusters.py -c ${cluster_labels}
+        #micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_h5ads.py -e ${expression_h5} -f ${atac_fragments_tsv} -c ${cluster_labels} \
+        #    -i ${input_name} ~{"--min_num_fragments=" + min_num_fragments}
     }
 
     output {
         Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_cluster_pairs.tsv"))
         Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_cluster_pairs.tsv"))
         Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
-        Array[File]+ rna_h5ads = glob("*rna_*.h5ad")
-        Array[File]+ atac_h5ads = glob("*atac_*.h5ad")
+        Array[File]+ rna_h5ads = glob("*rna_*fake_file.txt")
+        Array[File]+ atac_h5ads = glob("*atac_*fake_file.txt")
     }
 
     runtime {
