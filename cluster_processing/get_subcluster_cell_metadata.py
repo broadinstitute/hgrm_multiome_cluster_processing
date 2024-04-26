@@ -17,14 +17,14 @@ def main():
 
     cluster_name = args.subcluster_name
     print(f"Reading in all {cluster_name} RNA files.")
-    if args.clustered_rna_h5ad is not None:
+    if args.clustered_rna_h5ads is not None:
         all_rna_counts = [sc.read_h5ad(rna) for rna in args.clustered_rna_h5ads]
         rna_counts = ad.concat(all_rna_counts)
         print(f"Writing out concatenated rna h5ad for cluster {cluster_name} across inputs.")
         rna_counts.write_h5ad(f'rna_{cluster_name}.h5ad')
 
     print(f"Reading in all {cluster_name} ATAC files.")
-    if args.clustered_atac_h5ad is not None:
+    if args.clustered_atac_h5ads is not None:
         all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_rna_h5ads]
         atac_counts = ad.concat(all_atac_counts)
         print(f"Writing out concatenated atac h5ad for cluster {cluster_name} across inputs.")
@@ -42,14 +42,14 @@ def main():
 
     #TODO: deal with this, write out empty files perhaps
     # account for rare cases where an entire cluster exists only in one of the data types (RNA or ATAC)
-    if args.clustered_rna_h5ad is None:
+    if args.clustered_rna_h5ads is None:
         # make an RNA object with same dimension, filled with NaN for consistency later
         rna_obs = pd.DataFrame(index=atac_counts.obs_names,
                                columns=['CellClusterID', 'n_genes_by_counts', 'total_counts', 'pct_counts_mito', 'pct_counts_ribo'])
     else:
         # copy objects metadata
         rna_obs = rna_counts.obs.copy()
-    if args.clustered_atac_h5ad is None:
+    if args.clustered_atac_h5ads is None:
         atac_obs = pd.DataFrame(index=rna_counts.obs_names,
                                 columns=['n_fragment', 'frac_dup', 'frac_mito', 'CellClusterID'])
     else:
