@@ -15,8 +15,8 @@ workflow multiome_cluster_processing {
 
         #Int atac_size_1 = floor(size(files.left.right, "GB"))
         #Int rna_size_1 = floor(size(files.left.left, "GB"))
-        Int atac_size_1 = "2GB"
-        Int rna_size_1 = "2GB"
+        Int atac_size_1 = "2"
+        Int rna_size_1 = "2"
 
         call get_cluster_data {
             input:
