@@ -27,7 +27,7 @@ def main():
     for filename in args.atac_filenames:
         for cluster in cluster_names:
             if filename.endswith(f'/{cluster}_atac_fake_file.txt'):
-                rna_files[cluster].append(filename)
+                atac_files[cluster].append(filename)
     json.dump(atac_files, open("atac_files.json", "w"))
 
 
