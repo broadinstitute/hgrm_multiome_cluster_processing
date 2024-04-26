@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import json
+from pathlib import Path
 from collections import defaultdict
 
 def main():
@@ -18,16 +19,26 @@ def main():
     rna_files = defaultdict(list)
     for filename in args.rna_filenames:
         for cluster in cluster_names:
-            if filename.endswith(f'/{cluster}_rna_fake_file.txt'):
+            if filename.endswith(f'/{cluster}_rna.h5ad'):
                 rna_files[cluster].append(filename)
+
+    for cluster in cluster_names:
+        if cluster not in rna_files:
+            rna_files[cluster] = []
+
     json.dump(rna_files, open("rna_files.json", "w"))
 
 
     atac_files = defaultdict(list)
     for filename in args.atac_filenames:
         for cluster in cluster_names:
-            if filename.endswith(f'/{cluster}_atac_fake_file.txt'):
+            if filename.endswith(f'/{cluster}_atac.h5ad'):
                 atac_files[cluster].append(filename)
+
+    for cluster in cluster_names:
+        if cluster not in atac_files:
+            atac_files[cluster] = []
+
     json.dump(atac_files, open("atac_files.json", "w"))
 
 

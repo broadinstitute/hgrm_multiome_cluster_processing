@@ -115,8 +115,8 @@ task get_cluster_data {
 
     output {
         Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
-        Array[File]+ rna_h5ads = glob("*rna_fake_file.txt")
-        Array[File]+ atac_h5ads = glob("*atac_fake_file.txt")
+        Array[File]+ rna_h5ads = glob("*rna.h5ad")
+        Array[File]+ atac_h5ads = glob("*atac.h5ad")
         File cluster_names = "all_unique_clusters.txt"
     }
 

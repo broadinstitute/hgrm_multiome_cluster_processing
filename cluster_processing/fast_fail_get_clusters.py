@@ -11,8 +11,8 @@ def main():
     cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
     cell_clusters_unique = pd.DataFrame(cell_clusters.iloc[:, 0].unique().astype(str), columns=['cluster'])
 
-    cell_clusters_unique['rna_fake_file'] = cell_clusters_unique.cluster + '_rna_fake_file.txt'
-    cell_clusters_unique['atac_fake_file'] = cell_clusters_unique.cluster + '_atac_fake_file.txt'
+    cell_clusters_unique['rna_fake_file'] = cell_clusters_unique.cluster + '_rna.h5ad'
+    cell_clusters_unique['atac_fake_file'] = cell_clusters_unique.cluster + '_atac.h5ad'
 
     for file in cell_clusters_unique.rna_fake_file:
         Path(f'{file}').touch()
