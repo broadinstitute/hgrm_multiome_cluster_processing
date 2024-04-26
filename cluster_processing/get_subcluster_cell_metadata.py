@@ -16,14 +16,14 @@ def main():
     args = parser.parse_args()
 
     cluster_name = args.subcluster_name
-    print(f"Reading in all {cluster_name} RNA files.")
+    print(f"Reading in all cluster {cluster_name} RNA files.")
     if args.clustered_rna_h5ads is not None:
         all_rna_counts = [sc.read_h5ad(rna) for rna in args.clustered_rna_h5ads]
         rna_counts = ad.concat(all_rna_counts)
         print(f"Writing out concatenated rna h5ad for cluster {cluster_name} across inputs.")
         rna_counts.write_h5ad(f'rna_{cluster_name}.h5ad')
 
-    print(f"Reading in all {cluster_name} ATAC files.")
+    print(f"Reading in all cluster {cluster_name} ATAC files.")
     if args.clustered_atac_h5ads is not None:
         all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_rna_h5ads]
         atac_counts = ad.concat(all_atac_counts)
@@ -64,6 +64,7 @@ def main():
         atac_obs, left_index=True, right_index=True, how="outer"
     )
     # we use the original assignments, because some may not be present in both objects
+    # TODO: change to not need this input, could just do an or operation.
     per_cell_metadata['CellClusterID'] = cell_clusters.cluster_string
 
     per_cell_metadata.to_csv(f'{cluster_name}_per_cell_metadata.txt', sep='\t')
