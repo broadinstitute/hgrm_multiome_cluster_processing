@@ -39,13 +39,14 @@ workflow multiome_cluster_processing {
         input:
             all_rna_files = all_rna_files,
             all_atac_files = all_atac_files,
+            cluster_names = select_first(get_cluster_data.cluster_names),
             git_branch = git_branch,
             docker_image = docker_image
     }
 
     Map[String, Array[File]] rna_files = collect_by_key(get_cluster_file_map.rna_files)
     Map[String, Array[File]] atac_files = collect_by_key(get_cluster_file_map.atac_files)
-    Array[String] cluster_names = keys(rna_files)
+    Array[String] cluster_names = read_lines(select_first(get_cluster_data.cluster_names))
 
     scatter (cluster_name in cluster_names) {
 
@@ -116,8 +117,9 @@ task get_cluster_data {
 
     output {
         Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
-        Array[File]+ rna_h5ads = glob("output/*/rna_fake_file.txt")
-        Array[File]+ atac_h5ads = glob("output/*/atac_fake_file.txt")
+        Array[File]+ rna_h5ads = glob("*rna_fake_file.txt")
+        Array[File]+ atac_h5ads = glob("*atac_fake_file.txt")
+        File cluster_names = "all_unique_clusters.txt"
     }
 
     runtime {
@@ -133,6 +135,7 @@ task get_cluster_file_map {
     input {
         Array[String] all_rna_files
         Array[String] all_atac_files
+        File cluster_names
         String git_branch
         String docker_image
     }
