@@ -144,7 +144,7 @@ task get_cluster_file_map {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
-        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_file_map.py -r ${sep=' ' all_rna_files} \
+        micromamba run -n tools2 python3 /app/cluster_processing/get_cluster_file_map.py -c ${cluster_names} -r ${sep=' ' all_rna_files} \
             -a ${sep=' ' all_atac_files}
     }
 

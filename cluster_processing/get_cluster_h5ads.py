@@ -83,12 +83,11 @@ def main():
             atac_cluster_only = atac_counts[
                 atac_counts.obs["CellClusterID"] == cluster_name
             ]
-            fname = f"{input_name}atac_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}atac_cluster_{cluster_name}.h5ad"
+            fname =f"{cluster_name}_atac.h5ad"
             atac_cluster_only.write(fname,
                 compression="gzip",
             )
-            cluster_str = cluster_name if "cluster" in cluster_name else f"cluster_{cluster_name}"
-            f.write(f"{cluster_str}\t{fname}\n")
+            f.write(f"{cluster_name}\t{fname}\n")
 
 
     print("Saving per-cluster rna files.")
@@ -97,7 +96,7 @@ def main():
             rna_cluster_only = rna_counts[
                 rna_counts.obs["CellClusterID"] == cluster_name
             ]
-            fname = f"{input_name}rna_{cluster_name}.h5ad" if "cluster" in cluster_name else f"{input_name}rna_cluster_{cluster_name}.h5ad"
+            fname = f"{cluster_name}_rna.h5ad"
             rna_cluster_only.write_h5ad(fname,
                 compression="gzip",
             )
