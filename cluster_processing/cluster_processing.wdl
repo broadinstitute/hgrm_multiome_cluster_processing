@@ -44,20 +44,18 @@ workflow multiome_cluster_processing {
             docker_image = docker_image
     }
 
-    Map[String, Array[File]] rna_files = collect_by_key(get_cluster_file_map.rna_files)
-    Map[String, Array[File]] atac_files = collect_by_key(get_cluster_file_map.atac_files)
     Array[String] cluster_names = read_lines(select_first(get_cluster_data.cluster_names))
 
     scatter (cluster_name in cluster_names) {
 
-        Int atac_size_2 = floor(size(atac_files[cluster_name], "GB"))
-        Int rna_size_2 = floor(size(rna_files[cluster_name], "GB"))
+        Int atac_size_2 = floor(size(get_cluster_file_map.atac_files[cluster_name], "GB"))
+        Int rna_size_2 = floor(size(get_cluster_file_map.rna_files[cluster_name], "GB"))
 
         call concatenate_cluster {
             input:
                 cluster_name = cluster_name,
-                rna_files = rna_files[cluster_name],
-                atac_files = atac_files[cluster_name],
+                rna_files = get_cluster_file_map.rna_files[cluster_name],
+                atac_files = get_cluster_file_map.atac_files[cluster_name],
                 cluster_labels = cluster_labels,
                 atac_size = atac_size_2,
                 rna_size = rna_size_2,
@@ -149,8 +147,8 @@ task get_cluster_file_map {
     }
 
     output {
-        Array[Pair[String, File]] rna_files = as_pairs(read_map("rna_cluster_pairs.tsv"))
-        Array[Pair[String, File]] atac_files = as_pairs(read_map("atac_cluster_pairs.tsv"))
+        Map[String, Array[String]] rna_files = read_json("rna_files.json")
+        Map[String, Array[String]] atac_files = read_json("atac_files.json")
     }
 
     runtime {
