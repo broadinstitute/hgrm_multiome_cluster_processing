@@ -18,8 +18,8 @@ def main():
     for file in cell_clusters_unique.atac_fake_file:
         Path(f'{file}').touch()
 
-    cell_clusters_unique[['cluster', 'rna_fake_file']].to_csv('rna_cluster_pairs.tsv', sep='\t', header=False)
-    cell_clusters_unique[['cluster', 'atac_fake_file']].to_csv('atac_cluster_pairs.tsv', sep='\t', header=False)
+    cell_clusters_unique[['cluster', 'rna_fake_file']].to_csv('rna_cluster_pairs.tsv', sep='\t', header=False, index=False)
+    cell_clusters_unique[['cluster', 'atac_fake_file']].to_csv('atac_cluster_pairs.tsv', sep='\t', header=False, index=False)
 
     Path("atac_fragments_clustered_fake.tsv.gz").touch()
 
