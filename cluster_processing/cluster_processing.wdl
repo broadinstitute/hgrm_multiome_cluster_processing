@@ -128,8 +128,8 @@ task save_map {
     >>>
 
     output {
-        File rna_map_file_out = write_map(rna_files)
-        File atac_map_file_out = write_map(atac_files)
+        File rna_map_file_out = write_json(rna_files)
+        File atac_map_file_out = write_json(atac_files)
     }
 
     runtime {
