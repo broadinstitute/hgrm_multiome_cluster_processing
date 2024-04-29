@@ -18,15 +18,21 @@ def main():
     cluster_name = args.subcluster_name
     print(f"Reading in all cluster {cluster_name} RNA files.")
     if args.clustered_rna_h5ads is not None:
-        all_rna_counts = [sc.read_h5ad(rna) for rna in args.clustered_rna_h5ads]
-        rna_counts = ad.concat(all_rna_counts)
+        if len(args.clustered_rna_h5ads) > 1:
+            all_rna_counts = [sc.read_h5ad(rna) for rna in args.clustered_rna_h5ads]
+            rna_counts = ad.concat(all_rna_counts)
+        else:
+            rna_counts = sc.read_h5ad(args.clustered_rna_h5ads[0])
         print(f"Writing out concatenated rna h5ad for cluster {cluster_name} across inputs.")
         rna_counts.write_h5ad(f'rna_{cluster_name}.h5ad')
 
     print(f"Reading in all cluster {cluster_name} ATAC files.")
     if args.clustered_atac_h5ads is not None:
-        all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_rna_h5ads]
-        atac_counts = ad.concat(all_atac_counts)
+        if len(args.clustered_atac_h5ads) > 1:
+            all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_rna_h5ads]
+            atac_counts = ad.concat(all_atac_counts)
+        else:
+            atac_counts = sc.read_h5ad(args.clustered_atac_h5ads[0])
         print(f"Writing out concatenated atac h5ad for cluster {cluster_name} across inputs.")
         atac_counts.write_h5ad(f'atac_{cluster_name}.h5ad')
 
