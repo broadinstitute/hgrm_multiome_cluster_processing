@@ -97,10 +97,12 @@ task get_cluster_data {
 
     parameter_meta {
         expression_h5: {
-            localization_optional: true
+            description: "expression h5s"
+            #localization_optional: true
         }
         atac_fragments_tsv: {
-            localization_optional: true
+            description: "atac fragments"
+            #localization_optional: true
         }
     }
 
