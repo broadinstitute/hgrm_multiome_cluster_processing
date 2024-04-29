@@ -11,7 +11,7 @@ def main():
     parser.add_argument("-c", dest="cluster_labels", type=str, required=True)
     parser.add_argument("-r", "--rna_h5ad", dest="clustered_rna_h5ads", nargs='+', default=[],
                         help="RNA h5ads for this cluster across all inputs")
-    parser.add_argument("-a", "--atac_h5ad", dest="clustered_atc_h5ads", nargs='+', default=[],
+    parser.add_argument("-a", "--atac_h5ad", dest="clustered_atac_h5ads", nargs='+', default=[],
                         help="ATAC h5ads for this cluster across all inputs")
     args = parser.parse_args()
 
