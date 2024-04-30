@@ -29,7 +29,7 @@ def main():
     print(f"Reading in all cluster {cluster_name} ATAC files.")
     if args.clustered_atac_h5ads is not None:
         if len(args.clustered_atac_h5ads) > 1:
-            all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_rna_h5ads]
+            all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_atac_h5ads]
             atac_counts = ad.concat(all_atac_counts)
         else:
             atac_counts = sc.read_h5ad(args.clustered_atac_h5ads[0])
@@ -55,6 +55,7 @@ def main():
     else:
         # copy objects metadata
         rna_obs = rna_counts.obs.copy()
+
     if args.clustered_atac_h5ads is None:
         atac_obs = pd.DataFrame(index=rna_counts.obs_names,
                                 columns=['n_fragment', 'frac_dup', 'frac_mito', 'CellClusterID'])
