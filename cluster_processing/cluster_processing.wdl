@@ -13,10 +13,8 @@ workflow multiome_cluster_processing {
 
     scatter (files in zip(zip(expression_h5s, atac_fragments_tsvs), input_names)) {
 
-        #Int atac_size_1 = floor(size(files.left.right, "GB"))
-        #Int rna_size_1 = floor(size(files.left.left, "GB"))
-        Int atac_size_1 = 2
-        Int rna_size_1 = 2
+        Int atac_size_1 = floor(size(files.left.right, "GB"))
+        Int rna_size_1 = floor(size(files.left.left, "GB"))
 
         call get_cluster_data {
             input:

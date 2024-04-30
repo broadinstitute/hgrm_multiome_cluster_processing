@@ -21,6 +21,12 @@ def main():
     if input_name != '':
         input_name = input_name + '_'
 
+    print("Reading in cell cluster assignments.")
+    # cluster labels must have cell-barcodes as index, and cluster labels in first column (and likely only column)
+    cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
+    if cell_clusters.index.is_unique == False:
+        raise ValueError('Your cluster map does not have unique index values (cell names). Please regenerate cluster labels with unique cell barcodes.')
+
     print("Reading in scRNA counts.")
     rna_counts = sc.read_10x_h5(args.expression_h5)
 
@@ -30,9 +36,6 @@ def main():
         min_num_fragments=200 if args.min_num_fragments is None else args.min_num_fragments
     )
 
-    print("Reading in cell cluster assignments.")
-    # cluster labels must have cell-barcodes as index, and cluster labels in first column (and likely only column)
-    cell_clusters = pd.read_table(args.cluster_labels, index_col=0)
     # for writing out to big_wigs, need in string format
     # this matches the file type evie gave, with index = cell names,
     # and first (and should be only) column corresponding to cluster names, regardless of col name
