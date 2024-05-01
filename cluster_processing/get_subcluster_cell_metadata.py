@@ -33,11 +33,14 @@ def main():
     print(f"Reading in all cluster {cluster_name} ATAC files.")
     if args.clustered_atac_h5ads is not None:
         if len(args.clustered_atac_h5ads) > 1:
-            #all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_atac_h5ads]
+            all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_atac_h5ads]
             print(f"Writing out concatenated atac h5ad for cluster {cluster_name} across inputs.")
-            ad.experimental.concat_on_disk(args.clustered_atac_h5ads, out_file=f'atac_{cluster_name}.h5ad')
+            # CANT USE BACKING METHOD FOR ATAC COUNTS BECAUSE THEY DONT HAVE X - DOESNT MAKE SENSE
+            # TRY THIS, SHOULDNT TAKE UP AS MUCH MEMORY BECAUSE OBJECTS AREN'T AS LARGE?
+            #ad.experimental.concat_on_disk(args.clustered_atac_h5ads, out_file=f'atac_{cluster_name}.h5ad')
             # read in concatenated counts from disk
-            atac_counts = sc.read_h5ad(f'atac_{cluster_name}.h5ad', backed='r')
+            #atac_counts = sc.read_h5ad(f'atac_{cluster_name}.h5ad', backed='r')
+            atac_counts = ad.concat(all_atac_counts)
         else:
             atac_counts = sc.read_h5ad(args.clustered_atac_h5ads[0], backed='r')
             print(f"Writing out single atac h5ad for cluster {cluster_name} across inputs.")
