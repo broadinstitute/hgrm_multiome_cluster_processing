@@ -11,8 +11,8 @@ def main():
     parser.add_argument("-c", dest="cluster_labels", type=str, required=True)
     parser.add_argument("-r", "--rna_h5ad", dest="clustered_rna_h5ads", nargs='+', default=[],
                         help="RNA h5ads for this cluster across all inputs")
-    parser.add_argument("-a", "--atac_h5ad", dest="clustered_atac_h5ads", nargs='+', default=[],
-                        help="ATAC h5ads for this cluster across all inputs")
+    parser.add_argument("-a", dest="all_cluster_fragments", type=str,
+                        help="ATAC fragments for this cluster across all inputs")
     args = parser.parse_args()
 
     cluster_name = args.subcluster_name
@@ -31,20 +31,10 @@ def main():
             rna_counts.write_h5ad(f'rna_{cluster_name}.h5ad')
 
     print(f"Reading in all cluster {cluster_name} ATAC files.")
-    if args.clustered_atac_h5ads is not None:
-        if len(args.clustered_atac_h5ads) > 1:
-            all_atac_counts = [sc.read_h5ad(atac) for atac in args.clustered_atac_h5ads]
-            print(f"Writing out concatenated atac h5ad for cluster {cluster_name} across inputs.")
-            # CANT USE BACKING METHOD FOR ATAC COUNTS BECAUSE THEY DONT HAVE X - DOESNT MAKE SENSE
-            # TRY THIS, SHOULDNT TAKE UP AS MUCH MEMORY BECAUSE OBJECTS AREN'T AS LARGE?
-            #ad.experimental.concat_on_disk(args.clustered_atac_h5ads, out_file=f'atac_{cluster_name}.h5ad')
-            # read in concatenated counts from disk
-            #atac_counts = sc.read_h5ad(f'atac_{cluster_name}.h5ad', backed='r')
-            atac_counts = ad.concat(all_atac_counts)
-        else:
-            atac_counts = sc.read_h5ad(args.clustered_atac_h5ads[0], backed='r')
-            print(f"Writing out single atac h5ad for cluster {cluster_name} across inputs.")
-            atac_counts.write_h5ad(f'atac_{cluster_name}.h5ad')
+    if args.all_cluster_fragments is not None:
+        atac_counts = snap.pp.import_data(args.all_cluster_fragments, sorted_by_barcode=True, chrom_sizes=snap.genome.hg38)
+        print(f"Writing out single atac h5ad for cluster {cluster_name} across inputs.")
+        atac_counts.write_h5ad(f'atac_{cluster_name}.h5ad')
 
 
     # read in cell cluster info and get in same format as cluster names
@@ -65,8 +55,8 @@ def main():
     else:
         # copy objects metadata
         rna_obs = rna_counts.obs.copy()
-
-    if args.clustered_atac_h5ads is None:
+    # will this even happen ever idk if this is possible
+    if args.all_cluster_fragments is None:
         atac_obs = pd.DataFrame(index=rna_counts.obs_names,
                                 columns=['n_fragment', 'frac_dup', 'frac_mito', 'CellClusterID'])
     else:

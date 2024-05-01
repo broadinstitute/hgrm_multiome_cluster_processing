@@ -10,8 +10,8 @@ def main():
     parser.add_argument("-c", dest="cluster_labels", type=str, required=True)
     parser.add_argument("-r", "--rna_h5ad", dest="rna_filenames", nargs='+', default=[],
                         help="RNA h5ads file strings")
-    parser.add_argument("-a", "--atac_h5ad", dest="atac_filenames", nargs='+', default=[],
-                        help="ATAC h5ads file strings")
+    parser.add_argument("-a", "--atac_fragments", dest="atac_filenames", nargs='+', default=[],
+                        help="ATAC fragment file strings")
     args = parser.parse_args()
 
     cluster_names = [ln.strip() for ln in open(args.cluster_labels)]
@@ -32,7 +32,7 @@ def main():
     atac_files = defaultdict(list)
     for filename in args.atac_filenames:
         for cluster in cluster_names:
-            if filename.endswith(f'/{cluster}_atac.h5ad'):
+            if filename.endswith(f'atac_fragments_clustered_{cluster}.tsv.gz'):
                 atac_files[cluster].append(filename)
 
     for cluster in cluster_names:

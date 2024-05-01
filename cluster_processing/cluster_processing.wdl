@@ -31,7 +31,7 @@ workflow multiome_cluster_processing {
     }
 
     Array[String] all_rna_files = flatten(get_cluster_data.rna_h5ads)
-    Array[String] all_atac_files = flatten(get_cluster_data.atac_h5ads)
+    Array[String] all_atac_files = flatten(get_cluster_data.fragment_files)
 
     call get_cluster_file_map {
         input:
@@ -72,9 +72,9 @@ workflow multiome_cluster_processing {
     output {
         Array[File] rna_h5ads = concatenate_cluster.concatenated_rna_h5ad
         Array[File] atac_h5ads = concatenate_cluster.concatenated_atac_h5ad
+        Array[File] all_fragment_files = concatenate_cluster.concatenated_atac_fragments
         File barcode_level_metadata = extract_metadata_tables.barcode_level_metadata
         File cluster_level_metadata = extract_metadata_tables.cluster_level_metadata
-        Array[File] all_fragment_files = flatten(get_cluster_data.fragment_files)
     }
 }
 
@@ -116,7 +116,6 @@ task get_cluster_data {
     output {
         Array[File] fragment_files = glob("*atac_fragments_clustered_*.tsv.gz")
         Array[File]+ rna_h5ads = glob("*rna.h5ad")
-        Array[File]+ atac_h5ads = glob("*atac.h5ad")
         File cluster_names = "all_unique_clusters.txt"
     }
 
@@ -195,14 +194,16 @@ task concatenate_cluster {
         set -ex
         (git clone https://github.com/broadinstitute/hgrm_multiome_cluster_processing.git /app ; cd /app ; git checkout ${git_branch})
         /tmp/monitor_script.sh &
+        cat ${sep=' ' atac_files} > all_fragments_~{cluster_name}.tsv.gz
         micromamba run -n tools2 python3 /app/cluster_processing/get_subcluster_cell_metadata.py -s ${cluster_name} -c ${cluster_labels} \
             -r ${sep=' ' rna_files} \
-            -a ${sep=' ' atac_files}
+            -a all_fragments_~{cluster_name}.tsv.gz
     }
 
     output {
         File concatenated_rna_h5ad = "rna_~{cluster_name}.h5ad"
         File concatenated_atac_h5ad = "atac_~{cluster_name}.h5ad"
+        File concatenated_atac_fragments = "all_fragments_~{cluster_name}.tsv.gz"
         File cluster_cell_metadata = "~{cluster_name}_per_cell_metadata.txt"
     }
 

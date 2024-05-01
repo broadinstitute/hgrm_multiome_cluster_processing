@@ -81,17 +81,7 @@ def main():
         cpm = (tot / tot.sum()) * 1e6
         rna_counts.var[f"{cluster_name}_CPM"] = cpm
 
-    # Run these loops separately to be safe. some clusters may not be in both.
-    print("Saving per-cluster atac files.")
-    for cluster_name in atac_counts.obs.CellClusterID.unique():
-        atac_cluster_only = atac_counts[
-            atac_counts.obs["CellClusterID"] == cluster_name
-        ]
-        fname =f"{cluster_name}_atac.h5ad"
-        atac_cluster_only.write(fname,
-            compression="gzip",
-        )
-
+    # don't save atac h5ads here anymore. just need atac fragment files.
 
     print("Saving per-cluster rna files.")
 
