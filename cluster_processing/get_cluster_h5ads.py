@@ -30,11 +30,14 @@ def main():
     print("Reading in scRNA counts.")
     rna_counts = sc.read_10x_h5(args.expression_h5)
 
-    print("Reading in scATAC fragments. This may take awhile.")
-    atac_counts = snap.pp.import_data(
-        args.fragments_tsv, chrom_sizes=snap.genome.hg38, sorted_by_barcode=False,
-        min_num_fragments=200 if args.min_num_fragments is None else args.min_num_fragments
-    )
+    if args.fragments_tsv.endswith(('.h5ad', '.h5', '.h5a')):
+        atac_counts = sc.read_h5ad(args.fragments_tsv)
+    else:
+        print("Reading in scATAC fragments. This may take awhile.")
+        atac_counts = snap.pp.import_data(
+            args.fragments_tsv, chrom_sizes=snap.genome.hg38, sorted_by_barcode=False,
+            min_num_fragments=200 if args.min_num_fragments is None else args.min_num_fragments
+        )
 
     # for writing out to big_wigs, need in string format
     # this matches the file type evie gave, with index = cell names,
