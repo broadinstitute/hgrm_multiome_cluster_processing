@@ -28,7 +28,12 @@ def main():
         raise ValueError('Your cluster map does not have unique index values (cell names). Please regenerate cluster labels with unique cell barcodes.')
 
     print("Reading in scRNA counts.")
-    rna_counts = sc.read_10x_h5(args.expression_h5)
+    if args.expression_h5.endswith(('.h5', '.h5a')):
+        rna_counts = sc.read_10x_h5(args.expression_h5)
+    elif args.expression_h5.endswith('.h5ad'):
+        rna_counts = sc.read_h5ad(args.expression_h5)
+    else:
+        raise ValueError('Your rna expression is not in .h5 or .h5ad format.')
 
     if args.fragments_tsv.endswith(('.h5ad', '.h5', '.h5a')):
         atac_counts = sc.read_h5ad(args.fragments_tsv, backed='r+')
