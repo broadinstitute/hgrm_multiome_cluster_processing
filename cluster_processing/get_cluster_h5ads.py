@@ -53,6 +53,8 @@ def main():
         cell_clusters.rename(
             columns={cell_clusters.columns[0]: "cluster_string"}, inplace=True
         )
+    # fix any cluster names that have spaces
+    cell_clusters['cluster_string'] = cell_clusters.cluster_string.str.replace(' ', '_')
     cell_clusters_unique = pd.DataFrame(cell_clusters.cluster_string.unique().astype(str), columns=['cluster'])
     cell_clusters_unique['cluster'].to_csv('all_unique_clusters.txt', header=False, index=False)
 
