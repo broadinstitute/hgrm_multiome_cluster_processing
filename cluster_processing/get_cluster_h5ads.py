@@ -31,7 +31,7 @@ def main():
     rna_counts = sc.read_10x_h5(args.expression_h5)
 
     if args.fragments_tsv.endswith(('.h5ad', '.h5', '.h5a')):
-        atac_counts = sc.read_h5ad(args.fragments_tsv)
+        atac_counts = sc.read_h5ad(args.fragments_tsv, backed='r+')
     else:
         print("Reading in scATAC fragments. This may take awhile.")
         atac_counts = snap.pp.import_data(
